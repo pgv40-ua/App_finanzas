@@ -20,6 +20,41 @@ const io = new Server(httpServer)
 // Serve the web panel from public/
 app.use(express.static(join(__dirname, 'public')))
 
+// CSV export — GET /api/export?month=YYYY-MM
+app.get('/api/export', (req, res) => {
+  const { month } = req.query
+  const all = getAll()
+
+  const rows = month
+    ? all.filter(e => {
+        const d = e.date ?? e.receivedAt
+        return d && d.slice(0, 7) === month
+      })
+    : all
+
+  const escape = v => `"${String(v ?? '').replace(/"/g, '""')}"`
+
+  const header = ['Fecha', 'Proveedor', 'Total', 'Moneda', 'Subtotal', 'IVA', 'Categoría', 'Notas', 'Chat ID']
+  const lines  = rows.map(e => [
+    e.date ?? e.receivedAt?.slice(0, 10) ?? '',
+    e.vendor   ?? '',
+    e.total    ?? '',
+    e.currency ?? 'MXN',
+    e.subtotal ?? '',
+    e.tax      ?? '',
+    e.category ?? '',
+    e.notes    ?? '',
+    e.from     ?? '',
+  ].map(escape).join(','))
+
+  const csv      = [header.join(','), ...lines].join('\r\n')
+  const filename = month ? `gastos-${month}.csv` : 'gastos.csv'
+
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8')
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`)
+  res.send('﻿' + csv) // UTF-8 BOM so Excel opens it correctly
+})
+
 io.on('connection', (socket) => {
   console.log('[IO] Client connected:', socket.id)
   // Send current state immediately so page loads with data on reload
