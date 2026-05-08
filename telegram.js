@@ -2,6 +2,17 @@
 import { Telegraf } from 'telegraf'
 import { parseInvoice } from './gemini.js'
 import { add } from './store.js'
+import { writeFile, mkdir } from 'fs/promises'
+import { join, dirname } from 'path'
+import { fileURLToPath } from 'url'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
+const UPLOADS_DIR = join(__dirname, 'public', 'uploads')
+
+function mimeToExt(mime) {
+  const map = { 'image/png':'png', 'image/gif':'gif', 'image/webp':'webp' }
+  return map[mime] ?? 'jpg'
+}
 
 let connected = false
 
@@ -16,16 +27,28 @@ export async function connectToTelegram(io) {
     return
   }
 
+  const allowedIds = process.env.ALLOWED_CHAT_IDS
+    ?.split(',')
+    .map(s => s.trim())
+    .filter(Boolean) ?? []
+
   const bot = new Telegraf(token)
 
+  bot.command('whoami', ctx => ctx.reply(`Tu Chat ID es: ${ctx.chat.id}`))
+
   async function handleMedia(ctx, fileId, mimetype) {
+    if (allowedIds.length > 0 && !allowedIds.includes(String(ctx.chat.id))) {
+      await ctx.reply('No estás autorizado para usar este bot.').catch(() => {})
+      return
+    }
+
     const from = String(ctx.chat.id)
     const timestamp = new Date().toISOString()
 
-    await ctx.reply('Imagen recibida. Procesando con Gemini Vision, un momento...')
-    io.emit('processing', { from, timestamp })
-
     try {
+      await ctx.reply('Imagen recibida. Procesando con Gemini Vision, un momento...')
+      io.emit('processing', { from, timestamp })
+
       const file = await ctx.telegram.getFile(fileId)
       const url = `https://api.telegram.org/file/bot${token}/${file.file_path}`
 
@@ -34,7 +57,16 @@ export async function connectToTelegram(io) {
 
       const data = await parseInvoice(buffer, mimetype)
 
-      const expense = add({ ...data, from, timestamp })
+      const expense = add({ ...data, from, timestamp, imageMime: mimetype })
+
+      // Persist receipt image for the detail view
+      try {
+        await mkdir(UPLOADS_DIR, { recursive: true })
+        await writeFile(join(UPLOADS_DIR, `${expense.id}.${mimeToExt(mimetype)}`), buffer)
+      } catch (e) {
+        console.warn('[TG] Could not save image:', e.message)
+      }
+
       io.emit('expense-added', expense)
 
       let replyText
@@ -54,9 +86,9 @@ export async function connectToTelegram(io) {
       }
       await ctx.reply(replyText)
     } catch (err) {
-      console.error('[TG] Error processing media:', err.message)
-      await ctx.reply('Ocurrió un error al procesar tu imagen. Intenta de nuevo.')
+      console.error('[TG] Error processing media:', err.message, err.stack)
       io.emit('processing-error', { from, timestamp })
+      await ctx.reply('Ocurrió un error al procesar tu imagen. Intenta de nuevo.').catch(() => {})
     }
   }
 
@@ -73,9 +105,14 @@ export async function connectToTelegram(io) {
     await handleMedia(ctx, doc.file_id, doc.mime_type)
   })
 
+  // Prevent crashes from unhandled middleware errors
+  bot.catch((err, ctx) => {
+    console.error('[TG] Unhandled handler error:', err.message, err.stack)
+  })
+
   // bot.launch() resolves only when the bot stops, so don't await it
   bot.launch().catch(err => {
-    console.error('[TG] Fatal:', err.message)
+    console.error('[TG] Fatal launch error:', err.message)
   })
 
   connected = true
