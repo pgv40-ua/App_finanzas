@@ -1,0 +1,39 @@
+{
+  "name": "Verum",
+  "short_name": "Verum",
+  "description": "Gestión inteligente de gastos empresariales con IA",
+  "start_url": "/?source=pwa",
+  "display": "standalone",
+  "background_color": "#0C0C0E",
+  "theme_color": "#2DD4A0",
+  "orientation": "portrait-primary",
+  "lang": "es",
+  "categories": ["finance", "productivity"],
+  "icons": [
+    {
+      "src": "favicon-32.png",
+      "sizes": "32x32",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "url": "/?source=pwa",
+      "description": "Ir al dashboard principal"
+    }
+  ]
+}

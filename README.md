@@ -1,31 +1,76 @@
-# App Finanzas — Gestor de Gastos con IA
+# Verum — Gestor de Gastos con IA
 
-Sistema de gestión de gastos empresariales en tiempo real. Un bot de Telegram recibe fotografías de facturas y tickets, extrae automáticamente los datos contables mediante **Google Gemini Vision** y los publica al instante en un panel web profesional de estética oscura, sin necesidad de introducir nada manualmente.
+Sistema multiusuario de gestión de gastos en tiempo real. Un bot de Telegram recibe fotos de tickets y facturas (o mensajes de texto del tipo *"McDonald's 250 MXN"*), **Google Gemini Vision 2.5 Flash** extrae automáticamente los datos contables, y todo aparece al instante en un panel web oscuro estilo Linear/Vercel — con autenticación, presupuestos, alertas, asistente conversacional de IA y soporte para empresas con varios trabajadores.
+
+> Antes "App Finanzas". Renombrado a **Verum** con la fase de autenticación + multiempresa.
+
+---
+
+## Lo nuevo en esta versión
+
+Estado: **Fase 2 completada**. Los siguientes módulos son nuevos respecto a la versión anterior:
+
+- **Autenticación completa** — Registro/login con email + contraseña, sesiones por *bearer token*, hashing bcrypt.
+- **Multi-tenant** — Cuentas *Particular* (usuario aislado) y *Empresa* (admin + N trabajadores, datos compartidos según rol).
+- **Códigos de invitación** — Cada empresa tiene un código rotable que los trabajadores usan al registrarse.
+- **Vinculación Telegram ↔ cuenta** — Cada usuario genera un código de 6 dígitos en el panel y lo envía como `/link 123456` al bot. Un bot, muchas cuentas.
+- **Asistente conversacional con IA** — Chat con streaming SSE que analiza tu historial de gastos usando Gemini 2.5 Flash; hace cálculos, comparaciones, proyecciones.
+- **Presupuestos + alertas** — Presupuesto global o por categoría; el bot avisa por Telegram al llegar al 80 % y al excederse.
+- **Detección de anomalías** — Posibles duplicados (mismo proveedor + fecha + importe) y gastos atípicos (> 2,5 × promedio histórico de la categoría).
+- **Resúmenes programados** — *Digest* semanal (lunes 8 am) y mensual (día 1 a las 8 am) enviados por Telegram a todos los usuarios vinculados.
+- **Gasto desde texto** — Manda `Uber 180 MXN` al bot y se registra sin necesidad de foto.
+- **Comandos enriquecidos** — `/stats`, `/budget`, `/last [N]`, `/export`, `/link`, `/unlink`, `/whoami`, `/help`, `/start`.
+- **Webhook saliente** — Cada gasto creado se reenvía a `WEBHOOK_URL` (Zapier / Make / n8n).
+- **PWA instalable** — Manifest, *service worker* con estrategia *network-first* para HTML/JS y *cache-first* para estáticos, iconos 192/512.
+- **Seguridad de servidor** — Helmet con CSP, `express-rate-limit` (200 req / 15 min en `/api/`), validación de inputs.
+- **Edición y borrado de gastos** — `PATCH` y `DELETE` desde el panel, con propagación en tiempo real a todos los dispositivos del scope.
+- **Branding Verum** — Logos, favicons, login dedicado, paleta verde menta sobre fondo `#0C0C0E`.
 
 ---
 
 ## Características principales
 
-### Bot & procesamiento
-- **Procesamiento automático de facturas** — Envía una foto de cualquier ticket o factura al bot y la IA extrae proveedor, fecha, importe, IVA, categoría y líneas de detalle.
-- **Confirmación inmediata en Telegram** — El bot responde al instante con el desglose estructurado cuando termina de procesar.
-- **Guardado automático de recibos** — La imagen original del ticket se almacena en disco para poder consultarla desde el panel.
-- **Control de acceso** — Lista blanca de Chat IDs (`ALLOWED_CHAT_IDS`) para restringir el bot a usuarios autorizados.
+### Bot de Telegram
+- **Procesamiento de fotos** — Envía cualquier ticket o factura; Gemini extrae proveedor, fecha, total, subtotal, IVA, moneda, categoría, líneas de detalle y notas.
+- **Procesamiento de texto** — Mensajes tipo `Uber 180`, `Café 65 MXN`, `Spotify 169 mensual` se interpretan también con Gemini.
+- **Comandos**:
+  | Comando | Función |
+  |---|---|
+  | `/start` | Bienvenida y estado de vinculación |
+  | `/link <código>` | Vincula este Telegram a tu cuenta del panel |
+  | `/unlink` | Desvincula la cuenta de este chat |
+  | `/whoami` | Muestra cuenta vinculada y Chat ID |
+  | `/stats` | Resumen del mes (total, promedio, por categoría) |
+  | `/budget` | Estado de presupuestos del mes (🟢 ⚠️ 🔴) |
+  | `/last [N]` | Últimas N facturas (1–20, default 5) |
+  | `/export` | Envía el CSV del mes como adjunto |
+  | `/help` | Lista todos los comandos |
+- **Guardado de la imagen original** — Cada ticket se guarda en `public/uploads/{id}.{ext}` para verlo desde el modal del panel.
+- **Alertas en hilo** — Si la nueva factura dispara una alerta de presupuesto o una anomalía, llega como mensaje extra al chat (y a los admins de la empresa).
 
 ### Panel web
-- **Dashboard en tiempo real** — Se actualiza en vivo vía Socket.io sin recargar la página, con skeleton card mientras se procesa.
-- **Diseño dark profesional** — Estética oscura estilo Linear/Vercel con sistema de tokens CSS y tipografía Geist + DM Sans.
-- **Vista mensual** — Selector de mes con dropdown tipo datepicker que muestra qué meses tienen datos y navega directamente entre años con facturas (sin saltar años vacíos).
-- **Vista anual con gráficos** — Gráfica de barras mensual y donut de categorías construidos con Chart.js 4; KPIs de total, promedio, mes pico y recuento.
-- **Modal de detalle** — Haz clic en cualquier tarjeta para ver todos los campos del gasto más la fotografía original del ticket.
-- **Filtro por categoría** — Sidebar con chips de categoría (Alimentación, Transporte, Hospedaje, Servicios, Tecnología) que filtran las tarjetas en tiempo real.
-- **Búsqueda por proveedor** — Input de búsqueda que filtra por nombre de proveedor, combinable con filtro de categoría.
-- **Toggle grid/lista** — Alterna entre vista de tarjetas y lista compacta con más datos visibles.
-- **Exportar CSV** — Descarga las facturas del mes seleccionado en formato CSV con BOM UTF-8 compatible con Excel.
+- **Login + registro** en `/login.html` con tres flujos: Particular, Crear empresa, Unirse a empresa (vía código de invitación).
+- **Dashboard mensual en vivo** — Socket.IO empuja `expense-added`, `expense-updated`, `expense-deleted`, `budget-updated`, `processing`, `processing-error`. *Skeleton card* mientras Gemini trabaja.
+- **Vista anual con gráficos** — Chart.js 4: barras por mes y donut por categoría; KPIs de total, promedio mensual, mes pico y recuento.
+- **Selector de mes** con dropdown tipo datepicker que solo navega a meses con datos.
+- **Filtros y búsqueda** — Chips de categoría + buscador por proveedor, combinables en tiempo real.
+- **Toggle grid / lista** — Vista compacta para escanear muchas facturas rápido.
+- **Modal de detalle** — Todos los campos del gasto + la imagen original del ticket, con botones para editar o eliminar.
+- **Edición inline** — Cualquier campo del gasto se puede corregir sin reprocesar la imagen.
+- **Exportar CSV** — Mes activo en CSV con BOM UTF-8 compatible con Excel y Google Sheets.
+- **Presupuestos** — UI para crear/editar/borrar presupuesto global o por categoría, con barra de progreso y porcentaje gastado.
+- **Asistente IA** — Chat lateral con streaming token a token; *"¿Cuánto gasté en transporte el mes pasado?"*, *"Proyecta mi gasto anual"*, *"Compara este trimestre con el anterior"*.
+- **Panel de administración** (cuentas *Empresa*) — Lista de trabajadores, código de invitación visible y rotable, eliminación de usuarios.
+- **Vinculación Telegram** — Botón que genera un código de 6 dígitos (válido 10 min) para enviar al bot.
+- **PWA** — Instalable desde Chrome/Edge en escritorio y móvil; funciona offline para la *shell* gracias al *service worker*.
 
 ### Backend
-- **Persistencia en SQLite** — Los gastos se guardan en `expenses.db` con `better-sqlite3`; sobreviven reinicios del servidor.
-- **Sin ORM, sin migraciones** — Esquema mínimo de tabla única con blob JSON; fácil de leer y auditar.
+- **SQLite** con [better-sqlite3](https://github.com/WiseLibs/better-sqlite3) (modo WAL, *foreign keys* activadas).
+- **Esquema multi-tenant** — Tablas `companies`, `users`, `sessions`, `link_codes`, `expenses`, `budgets`. Scoping automático según `account_type` y `role`.
+- **Sesiones por token** — 7 días, almacenadas en SQLite, purgadas cada hora.
+- **Helmet + CSP** estricta; CDN permitido solo para `cdn.jsdelivr.net` (Chart.js) y `fonts.googleapis.com`.
+- **Rate limiting** — 200 peticiones / 15 min por IP en todo `/api/`.
+- **Sin ORM** — *Prepared statements* directos, fácil de leer y auditar.
 
 ---
 
@@ -33,21 +78,24 @@ Sistema de gestión de gastos empresariales en tiempo real. Un bot de Telegram r
 
 | Capa | Tecnología |
 |------|-----------|
-| Bot de mensajería | [Telegraf](https://telegraf.js.org/) v4 (API oficial de Telegram) |
-| Visión artificial | [Google Gemini](https://aistudio.google.com/) 2.5 Flash |
-| Servidor | Node.js 18+ · Express 4 |
-| Tiempo real | Socket.io 4 |
-| Base de datos | [better-sqlite3](https://github.com/WiseLibs/better-sqlite3) |
-| Gráficos | [Chart.js](https://www.chartjs.org/) 4.4 |
-| Frontend | Vanilla JS · CSS custom properties (sin frameworks) |
-| Runtime | Node.js ESM (`"type": "module"`) |
+| Bot de mensajería | [Telegraf](https://telegraf.js.org/) 4 |
+| Visión y NLP | [Google Gemini](https://aistudio.google.com/) 2.5 Flash |
+| Servidor HTTP | Express 4 + [helmet](https://helmetjs.github.io/) + [express-rate-limit](https://github.com/express-rate-limit/express-rate-limit) |
+| Tiempo real | Socket.IO 4 con *rooms* por usuario y por empresa |
+| Base de datos | [better-sqlite3](https://github.com/WiseLibs/better-sqlite3) 12, modo WAL |
+| Autenticación | [bcryptjs](https://github.com/dcodeIO/bcrypt.js/) + tokens en SQLite |
+| Asistente IA | `@google/generative-ai` con Server-Sent Events |
+| Gráficos | [Chart.js](https://www.chartjs.org/) 4.4 (vía CDN) |
+| Frontend | Vanilla JS + CSS *custom properties* (sin frameworks) |
+| PWA | *Service worker* propio + Web App Manifest |
+| Runtime | Node.js 18+ ESM (`"type": "module"`) |
 
 ---
 
 ## Requisitos previos
 
 - **Node.js 18** o superior
-- **Cuenta en Google AI Studio** — para obtener la clave de Gemini ([aistudio.google.com](https://aistudio.google.com/app/apikey))
+- **Cuenta en Google AI Studio** — para obtener la clave de Gemini ([aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey))
 - **Bot de Telegram** — creado con [@BotFather](https://t.me/botfather) en menos de 2 minutos
 
 ---
@@ -55,27 +103,28 @@ Sistema de gestión de gastos empresariales en tiempo real. Un bot de Telegram r
 ## Instalación
 
 ```bash
-# 1. Clonar el repositorio
+# 1. Clonar
 git clone https://github.com/pgv40-ua/App_finanzas.git
 cd App_finanzas
 
 # 2. Instalar dependencias
 npm install
 
-# 3. Configurar las credenciales
-cp .env.example .env
+# 3. Configurar credenciales
+cp .env.example .env       # en Windows: Copy-Item .env.example .env
 ```
 
-Edita el archivo `.env` con tus claves:
+Edita el archivo `.env`:
 
 ```env
 GEMINI_API_KEY=tu_clave_de_google_ai_studio
 TELEGRAM_BOT_TOKEN=tu_token_de_botfather
-ALLOWED_CHAT_IDS=123456789,987654321   # opcional — Chat IDs autorizados
 PORT=3000
+BCRYPT_ROUNDS=10
+WEBHOOK_URL=                # opcional
 ```
 
-> **`ALLOWED_CHAT_IDS`** — Lista separada por comas de los Chat IDs que pueden usar el bot. Si se deja vacío, cualquier usuario puede enviar facturas. Obtén tu ID enviando `/whoami` al bot.
+> La base de datos `app.db` se crea sola en el primer arranque — no hay migraciones que correr.
 
 ---
 
@@ -83,64 +132,134 @@ PORT=3000
 
 1. Abre Telegram y busca **@BotFather**
 2. Envía `/newbot` y sigue las instrucciones
-3. BotFather te dará un token con formato `123456789:AAFxxx...`
-4. Pega ese token en `TELEGRAM_BOT_TOKEN` dentro de tu `.env`
-5. Envía `/whoami` al bot para obtener tu Chat ID y añadirlo a `ALLOWED_CHAT_IDS`
+3. Copia el token con formato `123456789:AAFxxx...` a `TELEGRAM_BOT_TOKEN`
+4. Arranca el servidor (`npm start`)
+5. Entra en `http://localhost:3000/login.html`, regístrate y, dentro del panel, **genera tu código de vinculación**
+6. En Telegram envía `/link <código>` al bot — ¡listo!
 
 ---
 
 ## Uso
 
 ```bash
-npm start
+npm start         # producción
+npm run dev       # desarrollo con --watch (auto-reload al guardar)
 ```
 
-El servidor arranca en `http://localhost:3000`. Abre esa URL en el navegador para ver el panel web.
+El servidor arranca en `http://localhost:3000`. Si abres la raíz sin sesión, el frontend te redirige a `/login.html`.
 
-Para procesar una factura:
-1. Busca tu bot en Telegram por el username que elegiste
-2. Envíale una fotografía de cualquier ticket o factura
-3. El bot responderá confirmando que está procesando
-4. En unos segundos recibirás el desglose completo y la tarjeta aparecerá en el panel web en tiempo real
+### Flujos de registro
+
+- **Particular** — Email + contraseña + nombre. Tus gastos son privados a tu cuenta.
+- **Crear empresa** — Email + contraseña + nombre del admin + nombre de la empresa. Recibes un código de invitación de 8 caracteres para repartir a tus trabajadores.
+- **Trabajador** — Email + contraseña + nombre + código de invitación. Tus gastos son visibles para los admins de la empresa.
+
+### Procesando una factura
+
+1. Abre Telegram y vincula tu cuenta con `/link <código>`
+2. Envíale una foto de cualquier ticket o factura (o un mensaje de texto del tipo `Uber 180 MXN`)
+3. El bot responde confirmando la recepción y, en unos segundos, devuelve el desglose extraído
+4. La tarjeta aparece al instante en el panel web de todos tus dispositivos conectados
 
 ---
 
-## Panel web — vistas y funcionalidades
+## API REST
 
-### Dashboard mensual
-- **KPIs**: total del mes, número de facturas con promedio, última factura recibida.
-- **Selector de mes**: haz clic en el mes/año del encabezado para abrir el datepicker. Los meses con facturas muestran un indicador. Las flechas de año saltan directamente al año anterior/siguiente que tenga datos.
-- **Filtros**: selecciona una categoría en la barra lateral o escribe en el buscador para filtrar instantáneamente.
-- **Modal de detalle**: haz clic en cualquier tarjeta para ver todos los campos y la fotografía original del ticket.
+Todos los endpoints `/api/*` (excepto `/api/auth/*`) requieren cabecera `Authorization: Bearer <token>`.
 
-### Vista anual
-- Accede desde la barra lateral con el botón **Por año**.
-- Navega entre años con `←` y `→`; solo se permiten años con al menos una factura.
-- **Gráfica de barras** — gasto total por mes.
-- **Gráfica donut** — distribución por categoría con leyenda y porcentajes.
-- **KPIs anuales**: total, promedio mensual, mes pico y total de facturas.
+### Autenticación
+| Método | Endpoint | Descripción |
+|---|---|---|
+| `POST` | `/api/auth/register/particular` | Registro de cuenta personal |
+| `POST` | `/api/auth/register/company` | Crear empresa + admin |
+| `POST` | `/api/auth/register/worker` | Unirse a empresa con código |
+| `POST` | `/api/auth/login` | Login (devuelve token) |
+| `POST` | `/api/auth/logout` | Revoca el token actual |
+| `GET`  | `/api/me` | Datos del usuario autenticado |
 
-### Exportar CSV
-El botón de descarga en la cabecera exporta las facturas del mes activo en formato CSV con BOM UTF-8 (compatible con Excel y Google Sheets directamente).
+### Gastos
+| Método | Endpoint | Descripción |
+|---|---|---|
+| `GET`    | `/api/expenses?month=YYYY-MM&page=1&limit=50` | Lista paginada |
+| `POST`   | `/api/expenses` | Alta manual |
+| `PATCH`  | `/api/expenses/:id` | Edición parcial |
+| `DELETE` | `/api/expenses/:id` | Baja |
+| `GET`    | `/api/export?month=YYYY-MM&token=...` | Descarga CSV (token en *query* para `<a download>`) |
+
+### Presupuestos
+| Método | Endpoint | Descripción |
+|---|---|---|
+| `GET`    | `/api/budgets` | Lista de presupuestos del scope |
+| `POST`   | `/api/budgets` | Crear o actualizar (por categoría o global) |
+| `DELETE` | `/api/budgets/:id` | Eliminar |
+
+### Vinculación Telegram
+| Método | Endpoint | Descripción |
+|---|---|---|
+| `POST` | `/api/telegram/link-code` | Genera código de 6 dígitos (válido 10 min) |
+
+### Administración (solo rol `admin`)
+| Método | Endpoint | Descripción |
+|---|---|---|
+| `GET`    | `/api/admin/invite-code` | Código de invitación actual |
+| `POST`   | `/api/admin/invite-code/rotate` | Genera uno nuevo |
+| `GET`    | `/api/admin/users` | Lista de trabajadores |
+| `DELETE` | `/api/admin/users/:id` | Eliminar trabajador |
+
+### Asistente IA
+| Método | Endpoint | Descripción |
+|---|---|---|
+| `POST` | `/api/assistant` | Pregunta con streaming SSE (`text/event-stream`) |
+| `GET`  | `/api/assistant/status` | Indica si Gemini está disponible |
+
+---
+
+## Eventos Socket.IO
+
+Conexión autenticada vía `socket.handshake.auth.token`. El servidor une al socket a las salas correspondientes:
+- `user:<userId>` — todos los usuarios
+- `company:<companyId>` — solo admins de empresa (ven los gastos de todos los trabajadores)
+
+| Evento | Dirección | Payload | Descripción |
+|--------|-----------|---------|-------------|
+| `init` | server → client | `{ expenses, budgets, connected }` | Snapshot inicial al conectar |
+| `bot-ready` | server → client | — | Bot de Telegram conectado |
+| `processing` | server → client | `{ from, timestamp }` | Imagen recibida, esperando IA |
+| `processing-error` | server → client | `{ from, timestamp }` | Falló el procesamiento |
+| `expense-added` | server → client | `Expense` | Nuevo gasto disponible |
+| `expense-updated` | server → client | `Expense` | Gasto editado |
+| `expense-deleted` | server → client | `{ id }` | Gasto borrado |
+| `budget-updated` | server → client | `Budget` | Alta o cambio de presupuesto |
+| `budget-deleted` | server → client | `{ id }` | Presupuesto borrado |
 
 ---
 
 ## Estructura del proyecto
 
 ```
-App_finanzas/
-├── server.js          # Punto de entrada — Express + Socket.io + API CSV
-├── telegram.js        # Bot de Telegram (Telegraf) + guardado de imágenes
-├── gemini.js          # Integración con Gemini Vision — extracción de JSON
-├── store.js           # Persistencia SQLite con better-sqlite3
-├── test-gemini.js     # Script de diagnóstico para verificar la API de Gemini
-├── expenses.db        # Base de datos SQLite (generada automáticamente, en .gitignore)
+Verum/
+├── server.js          # Express + Socket.IO + API REST
+├── auth.js            # bcrypt, tokens, middlewares de autorización
+├── store.js           # Capa SQLite (users, companies, sessions, expenses, budgets...)
+├── telegram.js        # Bot Telegraf, comandos, manejo de fotos/texto
+├── gemini.js          # Visión + parsing de texto con Gemini 2.5 Flash
+├── alerts.js          # Alertas de presupuesto, anomalías y digests programados
+├── assistant.js       # Chat con streaming SSE sobre el historial del usuario
+├── app.db             # SQLite (auto-generado, en .gitignore)
 ├── public/
-│   ├── index.html     # Panel web — app shell con sidebar y dos vistas
-│   ├── style.css      # Sistema de diseño dark profesional
-│   ├── app.js         # Lógica del cliente — estado, socket, gráficos, modales
-│   └── uploads/       # Imágenes de tickets guardadas en disco (auto-generado)
+│   ├── index.html     # App shell del dashboard
+│   ├── login.html     # Login / registro
+│   ├── style.css      # Sistema de diseño dark
+│   ├── app.js         # Lógica del cliente — estado, sockets, gráficos, modales, asistente
+│   ├── login.js       # Lógica del flujo de auth
+│   ├── manifest.json  # Web App Manifest (PWA)
+│   ├── sw.js          # Service worker
+│   ├── icon-*.png     # Iconos PWA
+│   ├── favicon-*.png  # Favicons
+│   ├── logo*.png      # Branding Verum
+│   └── uploads/       # Imágenes de tickets (auto-generado, en .gitignore)
 ├── .env.example       # Plantilla de variables de entorno
+├── .gitignore
 └── package.json
 ```
 
@@ -149,56 +268,53 @@ App_finanzas/
 ## Flujo de datos
 
 ```
-Usuario envía foto  →  Bot de Telegram recibe imagen
-        │
-        ▼
-  Gemini Vision extrae JSON estructurado
-  { vendor, date, total, tax, category, items[] }
-        │
-        ▼
-  store.js guarda el gasto en SQLite
-  Imagen guardada en public/uploads/{id}.jpg
-        │
-        ├──▶  Socket.io emite "expense-added" al panel web
-        │          └──▶ Tarjeta aparece en tiempo real
-        │
-        └──▶  Bot responde al usuario con el resumen completo
+                ┌──────────────────────────┐
+   📷 foto ──▶  │  Bot Telegram (Telegraf) │  ─▶  /link <código>  →  asocia chat ↔ user
+                └────────────┬─────────────┘
+                             │
+                             ▼
+                  Gemini Vision 2.5 Flash
+                  → JSON: vendor, date, total, tax, currency,
+                          category, items[], notes
+                             │
+                             ▼
+                       store.js (SQLite)
+                  insert en `expenses`  +  guarda imagen en public/uploads/{id}.jpg
+                             │
+            ┌────────────────┼────────────────┬─────────────────┐
+            ▼                ▼                ▼                 ▼
+   Socket.IO emite    alerts.js revisa  alerts.js detecta  WEBHOOK_URL (Zapier/
+   `expense-added`    presupuestos      anomalías          Make/n8n) si está set
+   a user:* y         (80% / 100%)      (duplicado / >2.5×)
+   company:*
+            │
+            ▼
+   Panel web actualiza tarjetas, KPIs y gráficos al instante
 ```
-
----
-
-## Eventos Socket.io
-
-| Evento | Dirección | Descripción |
-|--------|-----------|-------------|
-| `init` | server → client | Estado inicial al conectar (gastos existentes + estado del bot) |
-| `bot-ready` | server → client | Bot de Telegram conectado y listo |
-| `processing` | server → client | Imagen recibida, procesando (muestra skeleton card) |
-| `expense-added` | server → client | Gasto procesado con éxito (incluye campo `imageMime`) |
-| `processing-error` | server → client | Error durante el procesamiento |
 
 ---
 
 ## Variables de entorno
 
-| Variable | Descripción | Requerida |
-|----------|-------------|-----------|
-| `GEMINI_API_KEY` | Clave de Google AI Studio | Sí |
-| `TELEGRAM_BOT_TOKEN` | Token del bot de BotFather | Sí |
-| `ALLOWED_CHAT_IDS` | Chat IDs autorizados, separados por coma | No |
-| `PORT` | Puerto del servidor (por defecto: 3000) | No |
+| Variable | Descripción | Requerida | Default |
+|----------|-------------|-----------|---------|
+| `GEMINI_API_KEY` | Clave de Google AI Studio | Sí | — |
+| `TELEGRAM_BOT_TOKEN` | Token del bot de BotFather | Sí | — |
+| `PORT` | Puerto HTTP del servidor | No | `3000` |
+| `BCRYPT_ROUNDS` | Coste del hashing de contraseñas | No | `10` |
+| `WEBHOOK_URL` | URL POST a la que reenviar cada gasto creado | No | — |
 
 ---
 
-## Script de diagnóstico
+## Seguridad
 
-Si tienes problemas con la API de Gemini, ejecuta:
-
-```bash
-node test-gemini.js
-```
-
-El script prueba automáticamente los modelos disponibles en tu clave y reporta cuáles están operativos.
+- Contraseñas con **bcrypt** (coste configurable). Nunca se devuelven al cliente — `auth.js` las elimina con `sanitizeUser`.
+- **Sesiones rotables** de 7 días almacenadas en SQLite; logout las revoca al instante.
+- **CSP estricta** vía Helmet — solo se permite `cdn.jsdelivr.net` para Chart.js y `fonts.googleapis.com` para fuentes.
+- **Rate limiting** global en `/api/` (200 req / 15 min por IP).
+- **Aislamiento por scope** — los queries SQL filtran por `user_id` (particulares y trabajadores) o `company_id` (admins); no se confía nunca en datos del cliente para autorizar.
+- Códigos de vinculación Telegram con **TTL de 10 minutos** y de un solo uso.
+- Códigos de invitación de empresa **rotables** desde el panel admin.
 
 ---
 

@@ -3,10 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Expense Manager</title>
+  <title>Verum</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=Geist:wght@400;500;600;700;800;900&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" type="image/png" sizes="64x64" href="favicon-64.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png" />
+  <meta name="theme-color" content="#2DD4A0" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -16,8 +23,8 @@
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-header">
         <div class="brand">
-          <div class="brand-mark">EX</div>
-          <span class="brand-name">Expense<br/>Manager</span>
+          <img src="logo-transparent.png" class="brand-logo" alt="Verum">
+          <span class="brand-name">Verum</span>
         </div>
       </div>
 
@@ -29,6 +36,14 @@
         <button class="nav-item" data-view="annual" id="navAnnual">
           <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M1.5 11.5L5 7l3.5 2.5 4-5.5" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/><path d="M1 14h13" stroke="currentColor" stroke-width="1.35" stroke-linecap="round"/></svg>
           <span>Por año</span>
+        </button>
+        <button class="nav-item" data-view="budgets" id="navBudgets">
+          <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="6" stroke="currentColor" stroke-width="1.35"/><path d="M7.5 4.5v6M5 6.5h5M5 9h3.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+          <span>Presupuestos</span>
+        </button>
+        <button class="nav-item hidden" data-view="admin" id="navAdmin">
+          <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="5" r="2.5" stroke="currentColor" stroke-width="1.35"/><path d="M2.5 13c0-2.5 2.2-4.5 5-4.5s5 2 5 4.5" stroke="currentColor" stroke-width="1.35" stroke-linecap="round"/></svg>
+          <span>Equipo</span>
         </button>
       </nav>
 
@@ -64,7 +79,29 @@
         </div>
       </div>
 
+      <div class="sidebar-section hidden" id="userFilterSection">
+        <p class="sidebar-label">Usuario</p>
+        <div class="cat-filters" id="userFilters"></div>
+      </div>
+
       <div class="sidebar-footer">
+        <div class="user-card">
+          <div class="user-card-avatar" id="userAvatar"></div>
+          <div class="user-card-info">
+            <div class="user-card-name" id="userName">…</div>
+            <div class="user-card-meta" id="userMeta">…</div>
+          </div>
+        </div>
+        <div class="user-actions">
+          <button class="user-action-btn" id="linkTelegramBtn" title="Vincular Telegram">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M21 4L2 12l5.5 2L18 7l-7.5 8.5L17 20l4-16z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+            <span>Vincular Telegram</span>
+          </button>
+          <button class="user-action-btn user-action-logout" id="logoutBtn" title="Cerrar sesión">
+            <svg width="14" height="14" viewBox="0 0 15 15" fill="none"><path d="M6 1.5H3a1 1 0 00-1 1v10a1 1 0 001 1h3M10 4.5l3 3-3 3M13 7.5H6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>Cerrar sesión</span>
+          </button>
+        </div>
         <div class="connection-status" id="connectionStatus">
           <span class="status-dot" id="statusDot"></span>
           <span class="status-text" id="statusText">Conectando…</span>
@@ -80,8 +117,8 @@
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M2 9h14M2 4.5h14M2 13.5h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
         </button>
         <div class="topbar-brand">
-          <div class="brand-mark sm">EX</div>
-          <span>Expense Manager</span>
+          <img src="logo-transparent.png" class="brand-logo sm" alt="Verum">
+          <span>Verum</span>
         </div>
         <span class="status-dot" id="topbarDot"></span>
       </header>
@@ -106,6 +143,10 @@
                 <svg class="search-icon" width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="5.5" cy="5.5" r="4" stroke="currentColor" stroke-width="1.35"/><path d="M9 9l2.5 2.5" stroke="currentColor" stroke-width="1.35" stroke-linecap="round"/></svg>
                 <input class="search-input" id="searchInput" type="search" placeholder="Buscar proveedor…" autocomplete="off" />
               </div>
+              <button class="add-btn" id="addExpenseBtn" aria-label="Nuevo gasto">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+                <span>Nuevo</span>
+              </button>
               <div class="view-toggle">
                 <button class="toggle-btn active" id="btnGrid" aria-label="Cuadrícula">
                   <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="1" y="1" width="4.5" height="4.5" rx="1" stroke="currentColor" stroke-width="1.2"/><rect x="7.5" y="1" width="4.5" height="4.5" rx="1" stroke="currentColor" stroke-width="1.2"/><rect x="1" y="7.5" width="4.5" height="4.5" rx="1" stroke="currentColor" stroke-width="1.2"/><rect x="7.5" y="7.5" width="4.5" height="4.5" rx="1" stroke="currentColor" stroke-width="1.2"/></svg>
@@ -160,6 +201,10 @@
             </div>
 
             <div class="spacer"></div>
+            <button class="export-btn" id="printBtn" title="Guardar como PDF">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><rect x="2" y="3" width="8" height="6" rx="1" stroke="currentColor" stroke-width="1.2"/><path d="M4 3V1.5a.5.5 0 01.5-.5h3a.5.5 0 01.5.5V3M4 7.5h4M4 9.5h2.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+              PDF
+            </button>
             <button class="export-btn" id="exportBtn">
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v7M3.5 5.5L6 8l2.5-2.5" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"/><path d="M1 9.5v.5a1 1 0 001 1h8a1 1 0 001-1v-.5" stroke="currentColor" stroke-width="1.35" stroke-linecap="round"/></svg>
               Exportar CSV
@@ -258,6 +303,66 @@
           </div>
         </div>
 
+        <!-- ══════════════════════════════════ -->
+        <!-- BUDGETS VIEW                       -->
+        <!-- ══════════════════════════════════ -->
+        <div class="view hidden" id="view-budgets">
+
+          <div class="page-header">
+            <div class="page-header-left">
+              <h1 class="page-title">Presupuestos</h1>
+              <div class="live-badge">
+                <span class="live-dot"></span>
+                <span>Este mes</span>
+              </div>
+            </div>
+            <div class="page-header-right">
+              <button class="add-btn" id="addBudgetBtn">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+                <span>Nuevo</span>
+              </button>
+            </div>
+          </div>
+
+          <div id="budgetsGrid" class="budgets-grid"></div>
+
+          <div class="empty-state hidden" id="budgetsEmpty">
+            <div class="empty-icon">
+              <svg width="38" height="38" viewBox="0 0 38 38" fill="none"><circle cx="19" cy="19" r="14" stroke="currentColor" stroke-width="1.4"/><path d="M19 12v14M13 16h12M13 22h9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+            </div>
+            <p class="empty-title">Sin presupuestos</p>
+            <p class="empty-sub">Crea un presupuesto mensual para controlar tus gastos por categoría</p>
+          </div>
+
+        </div>
+
+        <!-- ══════════════════════════════════ -->
+        <!-- ADMIN VIEW (admins de empresa)    -->
+        <!-- ══════════════════════════════════ -->
+        <div class="view hidden" id="view-admin">
+          <div class="page-header">
+            <div class="page-header-left">
+              <h1 class="page-title">Equipo</h1>
+            </div>
+          </div>
+
+          <div class="admin-section">
+            <p class="admin-section-title">Código de invitación</p>
+            <p class="admin-section-sub">Comparte este código con los trabajadores que se vayan a registrar.</p>
+            <div class="admin-invite-row">
+              <code class="admin-invite-code" id="adminInviteCode">—</code>
+              <button class="admin-action-btn" id="adminCopyBtn">Copiar</button>
+              <button class="admin-action-btn admin-action-secondary" id="adminRotateBtn">Rotar</button>
+            </div>
+          </div>
+
+          <div class="admin-section">
+            <p class="admin-section-title">Miembros del equipo</p>
+            <p class="admin-section-sub">Trabajadores que han accedido a la empresa.</p>
+            <div id="adminWorkers" class="admin-workers"></div>
+          </div>
+        </div>
+
       </main>
     </div>
   </div>
@@ -340,9 +445,227 @@
             <p class="modal-notes" id="modalNotes"></p>
           </div>
 
+          <!-- Actions -->
+          <div class="modal-actions">
+            <button class="modal-action-btn modal-delete-btn" id="modalDeleteBtn">
+              <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 3.5h9M4.5 3.5V2.5a.5.5 0 01.5-.5h3a.5.5 0 01.5.5v1M10.5 3.5l-.5 7a1 1 0 01-1 .9H4a1 1 0 01-1-.9l-.5-7" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Eliminar
+            </button>
+            <button class="modal-action-btn modal-edit-btn" id="modalEditBtn">
+              <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M9 2.5l1.5 1.5L4 10.5H2.5V9L9 2.5z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Editar
+            </button>
+          </div>
+
         </div>
       </div>
     </div>
+  </div>
+
+  <!-- ── Confirm Delete Modal ── -->
+  <div class="modal-overlay hidden" id="confirmModal" role="dialog" aria-modal="true">
+    <div class="modal modal-sm">
+      <div class="confirm-body">
+        <div class="confirm-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 9v5M12 16.5v.5" stroke="#F87171" stroke-width="1.8" stroke-linecap="round"/><path d="M10.29 4.86L2.45 18a2 2 0 001.71 3h15.68a2 2 0 001.71-3L13.71 4.86a2 2 0 00-3.42 0z" stroke="#F87171" stroke-width="1.8" stroke-linejoin="round"/></svg>
+        </div>
+        <p class="confirm-title">¿Eliminar este gasto?</p>
+        <p class="confirm-sub">Esta acción no se puede deshacer.</p>
+        <div class="confirm-btns">
+          <button class="confirm-cancel" id="confirmCancel">Cancelar</button>
+          <button class="confirm-ok" id="confirmOk">Eliminar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Manual Expense Modal ── -->
+  <div class="modal-overlay hidden" id="manualModal" role="dialog" aria-modal="true" aria-labelledby="manualTitle">
+    <div class="modal modal-form">
+      <button class="modal-close" id="manualClose" aria-label="Cerrar">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M12 4L4 12M4 4l8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      </button>
+      <div class="modal-form-body">
+        <h2 class="modal-form-title" id="manualTitle">Nuevo gasto</h2>
+        <p class="modal-form-sub">Registra un gasto manualmente sin foto de recibo</p>
+        <form id="manualForm" autocomplete="off">
+          <div class="form-row">
+            <div class="form-field">
+              <label class="form-label" for="fVendor">Proveedor</label>
+              <input class="form-input" id="fVendor" type="text" placeholder="Nombre del negocio" />
+            </div>
+            <div class="form-field">
+              <label class="form-label" for="fDate">Fecha</label>
+              <input class="form-input" id="fDate" type="date" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-field">
+              <label class="form-label" for="fTotal">Total <span class="form-required">*</span></label>
+              <input class="form-input" id="fTotal" type="number" step="0.01" min="0" placeholder="0.00" required />
+            </div>
+            <div class="form-field">
+              <label class="form-label" for="fCurrency">Moneda</label>
+              <select class="form-input form-select" id="fCurrency">
+                <option value="MXN">MXN</option>
+                <option value="USD">USD</option>
+                <option value="EUR">EUR</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-field">
+              <label class="form-label" for="fSubtotal">Subtotal</label>
+              <input class="form-input" id="fSubtotal" type="number" step="0.01" min="0" placeholder="0.00" />
+            </div>
+            <div class="form-field">
+              <label class="form-label" for="fTax">IVA</label>
+              <input class="form-input" id="fTax" type="number" step="0.01" min="0" placeholder="0.00" />
+            </div>
+          </div>
+          <div class="form-field form-field-full">
+            <label class="form-label" for="fCategory">Categoría</label>
+            <select class="form-input form-select" id="fCategory">
+              <option value="Alimentación">Alimentación</option>
+              <option value="Transporte">Transporte</option>
+              <option value="Hospedaje">Hospedaje</option>
+              <option value="Servicios">Servicios</option>
+              <option value="Tecnología">Tecnología</option>
+              <option value="Otro" selected>Otro</option>
+            </select>
+          </div>
+          <div class="form-field form-field-full">
+            <label class="form-label" for="fNotes">Notas</label>
+            <input class="form-input" id="fNotes" type="text" placeholder="Comentario opcional…" />
+          </div>
+          <p class="form-error hidden" id="formError"></p>
+          <div class="form-footer">
+            <button type="button" class="form-cancel" id="manualCancelBtn">Cancelar</button>
+            <button type="submit" class="form-submit" id="manualSubmitBtn">
+              <span>Guardar gasto</span>
+              <div class="btn-spinner"></div>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Budget Modal ── -->
+  <div class="modal-overlay hidden" id="budgetModal" role="dialog" aria-modal="true" aria-labelledby="budgetModalTitle">
+    <div class="modal modal-form">
+      <button class="modal-close" id="budgetModalClose" aria-label="Cerrar">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M12 4L4 12M4 4l8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      </button>
+      <div class="modal-form-body">
+        <h2 class="modal-form-title" id="budgetModalTitle">Nuevo presupuesto</h2>
+        <p class="modal-form-sub">Establece un límite de gasto mensual por categoría</p>
+        <form id="budgetForm" autocomplete="off">
+          <div class="form-field form-field-full" style="margin-bottom:12px">
+            <label class="form-label" for="bCategory">Categoría</label>
+            <select class="form-input form-select" id="bCategory">
+              <option value="">Global (todas las categorías)</option>
+              <option value="Alimentación">Alimentación</option>
+              <option value="Transporte">Transporte</option>
+              <option value="Hospedaje">Hospedaje</option>
+              <option value="Servicios">Servicios</option>
+              <option value="Tecnología">Tecnología</option>
+              <option value="Otro">Otro</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <div class="form-field">
+              <label class="form-label" for="bAmount">Límite mensual <span class="form-required">*</span></label>
+              <input class="form-input" id="bAmount" type="number" step="0.01" min="1" placeholder="0.00" required />
+            </div>
+            <div class="form-field">
+              <label class="form-label" for="bCurrency">Moneda</label>
+              <select class="form-input form-select" id="bCurrency">
+                <option value="MXN">MXN</option>
+                <option value="USD">USD</option>
+                <option value="EUR">EUR</option>
+              </select>
+            </div>
+          </div>
+          <p class="form-error hidden" id="budgetFormError"></p>
+          <div class="form-footer">
+            <button type="button" class="form-cancel" id="budgetCancelBtn">Cancelar</button>
+            <button type="submit" class="form-submit" id="budgetSubmitBtn">
+              <span>Guardar</span>
+              <div class="btn-spinner"></div>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── AI Chat Widget ── -->
+  <button class="chat-fab hidden" id="chatFab" aria-label="Abrir asistente IA">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M11 2C6.03 2 2 5.8 2 10.5c0 2.1.8 4 2.2 5.5L3 20l4.3-1.3C8.5 19.5 9.7 19.7 11 19.7c5 0 9-3.8 9-8.5S16 2 11 2z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M7.5 10.5h7M7.5 13.5h4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    <span class="chat-fab-label">Asistente IA</span>
+  </button>
+
+  <div class="chat-panel hidden" id="chatPanel" role="dialog" aria-label="Asistente IA">
+    <div class="chat-header">
+      <div class="chat-header-info">
+        <div class="chat-avatar">AI</div>
+        <div>
+          <p class="chat-title">Asistente IA</p>
+          <p class="chat-subtitle" id="chatSubtitle">Pregunta sobre tus gastos</p>
+        </div>
+      </div>
+      <button class="chat-close-btn" id="chatClose" aria-label="Cerrar">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M11 3L3 11M3 3l8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div class="chat-messages" id="chatMessages">
+      <div class="chat-msg chat-msg-assistant">
+        <div class="chat-bubble">¡Hola! Soy tu asistente financiero. Puedo ayudarte a analizar tus gastos, calcular totales, detectar tendencias o responder cualquier pregunta sobre tus datos. ¿Qué quieres saber?</div>
+      </div>
+    </div>
+    <div class="chat-input-row">
+      <input class="chat-input" id="chatInput" type="text" placeholder="Pregunta sobre tus gastos…" autocomplete="off" maxlength="500" />
+      <button class="chat-send-btn" id="chatSend" aria-label="Enviar">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M14 2L2 7.5l5 1.5 1.5 5L14 2z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- PWA install banner -->
+  <div class="install-banner hidden" id="installBanner">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="2.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 5v5M5.5 7.5L8 10l2.5-2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span>Instala la app para acceso rápido desde tu dispositivo</span>
+    <button class="install-accept" id="installBtn">Instalar</button>
+    <button class="install-dismiss" id="installDismiss" aria-label="Cerrar">✕</button>
+  </div>
+
+  <!-- ── Telegram Link Modal ── -->
+  <div class="modal-overlay hidden" id="tgLinkModal" role="dialog" aria-modal="true" aria-labelledby="tgLinkTitle">
+    <div class="modal modal-sm">
+      <button class="modal-close" id="tgLinkClose" aria-label="Cerrar">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M12 4L4 12M4 4l8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      </button>
+      <div class="confirm-body">
+        <div class="confirm-icon" style="background:rgba(45,212,160,0.12)">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M21 4L2 12l5.5 2L18 7l-7.5 8.5L17 20l4-16z" stroke="#2DD4A0" stroke-width="1.7" stroke-linejoin="round"/></svg>
+        </div>
+        <p class="confirm-title" id="tgLinkTitle">Vincula tu Telegram</p>
+        <p class="confirm-sub">Abre el bot y envía este código como mensaje.</p>
+        <div class="tg-link-code-box">
+          <code class="tg-link-code" id="tgLinkCode">...</code>
+          <button class="admin-action-btn" id="tgLinkCopyBtn">Copiar</button>
+        </div>
+        <p class="confirm-sub" id="tgLinkExpires"></p>
+        <p class="confirm-sub" style="margin-top:10px"><strong>Comando:</strong> <code>/link CÓDIGO</code></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Print header (only visible in print mode) -->
+  <div class="print-header" id="printHeader">
+    <div class="print-brand">Verum</div>
+    <div class="print-meta" id="printMeta"></div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>

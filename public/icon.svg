@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 220">
+  <defs>
+    <linearGradient id="arrowGrad" x1="100" y1="26" x2="100" y2="170" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#3DDBA8"/>
+      <stop offset="100%" stop-color="#17958A"/>
+    </linearGradient>
+    <linearGradient id="tealGrad" x1="0" y1="80" x2="0" y2="173" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#1DA99B"/>
+      <stop offset="100%" stop-color="#0E7A70"/>
+    </linearGradient>
+    <clipPath id="sh">
+      <path d="M20,15 L180,15 L180,138 Q180,184 100,213 Q20,184 20,138Z"/>
+    </clipPath>
+  </defs>
+
+  <!-- Shield navy background -->
+  <path d="M20,15 L180,15 L180,138 Q180,184 100,213 Q20,184 20,138Z" fill="#0D2558"/>
+
+  <g clip-path="url(#sh)">
+    <!-- Left teal wing -->
+    <rect x="20" y="80" width="60" height="93" fill="url(#tealGrad)"/>
+    <!-- Right teal wing -->
+    <rect x="120" y="80" width="60" height="93" fill="url(#tealGrad)"/>
+    <!-- Central green upward arrow -->
+    <path d="M100,26 L134,78 L115,78 L115,170 L85,170 L85,78 L66,78Z" fill="url(#arrowGrad)"/>
+    <!-- White gap lines -->
+    <g stroke="white" stroke-width="5" fill="none" stroke-linecap="square">
+      <line x1="20" y1="15" x2="66" y2="78"/>
+      <line x1="180" y1="15" x2="134" y2="78"/>
+      <line x1="20" y1="80" x2="180" y2="80"/>
+      <line x1="83" y1="80" x2="83" y2="173"/>
+      <line x1="117" y1="80" x2="117" y2="173"/>
+      <line x1="20" y1="173" x2="180" y2="173"/>
+    </g>
+  </g>
+</svg>

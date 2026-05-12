@@ -20,6 +20,35 @@ El JSON debe tener exactamente esta estructura:
 }
 Si la imagen no es una factura o recibo, devuelve: {"error": "no es una factura válida"}`
 
+const TEXT_PROMPT = `Extrae datos de gasto de este mensaje de texto.
+Responde ÚNICAMENTE con un objeto JSON válido, sin explicaciones ni markdown.
+Estructura:
+{
+  "vendor": "nombre del proveedor o servicio",
+  "date": "YYYY-MM-DD o null",
+  "total": numero_decimal,
+  "currency": "MXN u otro código ISO",
+  "subtotal": null,
+  "tax": null,
+  "category": "Alimentación|Transporte|Hospedaje|Servicios|Tecnología|Otro",
+  "items": [],
+  "notes": "texto original como referencia"
+}
+Si no puedes extraer un monto numérico, devuelve: {"error": "no se pudo extraer el monto"}`
+
+export async function parseTextExpense(text) {
+  const result = await model.generateContent([TEXT_PROMPT, `Mensaje: "${text}"`])
+  const raw    = result.response.text()
+  const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim()
+  try {
+    const parsed = JSON.parse(cleaned)
+    if (parsed.error) return { error: parsed.error }
+    return parsed
+  } catch {
+    return { error: 'No se pudo interpretar el texto como gasto' }
+  }
+}
+
 export async function parseInvoice(buffer, mimetype = 'image/jpeg') {
   const imagePart = {
     inlineData: {
